@@ -86,6 +86,10 @@ def normalize_angle_delta(angle):
     return angle
 
 
+def se3_to_position(mat):
+    t = mat[:, -1][:-1]
+    return t
+
 class KittiOdomDataset(Dataset):
     def __init__(self, seq, path, transform=kittiTransform , normalizer=normalizer):
 

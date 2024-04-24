@@ -113,7 +113,7 @@ class DeepVOLite(nn.Module):
 		ang_loss = nn.functional.mse_loss(y_hat[:, :, :3], ang)
 		return 100 * ang_loss + pos_loss
 
-	def save_model(self, epoch, save_path):
+	def save_model(self, epoch, optimizer, save_path):
 		torch.save(
 			{
 			"epoch":epoch,

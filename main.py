@@ -9,9 +9,11 @@ from data_utils import KittiOdomDataset
 from config import *
 import os
 import argparse
+import time
 
 parser = argparse.ArgumentParser(description ='DeepVO paths and stuff')
 parser.add_argument('--data', help='Dataset Path')
+parser.add_argument('--mode', help='Train or Test')
 parser.add_argument('--trained', help='Trained folder Path')
 parser.add_argument('--loss', help='Loss folder Path')
 parser.add_argument('--workers', help='Number of workers')
@@ -20,11 +22,12 @@ parser.add_argument('--epochs', help='Number of Epochs')
 parser.add_argument('--scene', help="The scene")
 
 """
-python3 main.py --data "/home/avishkar/Desktop/research/KITTI_VO_RGB" --scene "00" --trained "trained_models" --loss "loss_trained" --workers 2 --batch 6 --epochs 1
+python3 main.py --mode train --data "/home/avishkar/Desktop/research/KITTI_VO_RGB" --scene "00" --trained "trained_models" --loss "loss_trained" --workers 2 --batch 6 --epochs 1
 """
 
 args = parser.parse_args()
 
+mode = args.mode
 loss_folder = args.loss
 trained_folder = args.trained
 data_path = args.data
@@ -55,23 +58,33 @@ test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True, num_
 
 epoch_losses = []
 
-for epoch in range(cur+1, cur+num_epochs+1):
-	print("Epoch:",epoch)
-	epoch_loss = train(model, train_loader, optimizer, epoch, device, loss_folder)
-	# epoch_loss = train_better(model, train_dataset, optimizer, epoch)
-	plt.clf()
-	plt.plot(epoch_losses)
-	
-	plt.clf()
-	
-	if epoch % 10 == 0 or (len(epoch_losses) == 0 or epoch_loss < min(epoch_losses)):
-		plt.savefig(f"{loss_folder}/train_{epoch}.png")
-		print(f"{epoch}th epoch saved")
-		model.save(epoch, optimizer, trained_folder)
-		test(model, test_loader, epoch, trained_folder, "03")
+start = time.time()
 
-	epoch_losses.append(epoch_loss)
+if mode =="train":
+	for epoch in range(cur+1, cur+num_epochs+1):
+		print("Epoch:",epoch)
+		epoch_loss = train(model, train_loader, optimizer, epoch, device, loss_folder)
+		# epoch_loss = train_better(model, train_dataset, optimizer, epoch)
+		plt.clf()
+		plt.plot(epoch_losses)
+		
+		plt.clf()
+		
+		if epoch % 10 == 0 or (len(epoch_losses) == 0 or epoch_loss < min(epoch_losses)):
+			plt.savefig(f"{loss_folder}/train_{epoch}.png")
+			print(f"{epoch}th epoch saved")
+			model.save_model(epoch, optimizer, trained_folder)
+			test(model, data_path, test_loader, epoch, trained_folder, "03")
 
+		epoch_losses.append(epoch_loss)
+
+		end = time.time()
+
+	print("Total training time : ", (end-start)/60, "min")
+
+if mode=="test":
+	model.load_state_dict(torch.load("./trained_models/1.pth")["model_state_dict"])
+	test(model, data_path, test_loader, 1, trained_folder, "03", device)
 
 
 """

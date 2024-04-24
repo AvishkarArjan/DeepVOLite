@@ -2,9 +2,11 @@ from data_utils import *
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+import time
 
 
 def train(model, train_loader, optimizer, epoch, device, loss_folder):
+	start = time.time()
 
 	model.train()
 	train_losses = 0.0
@@ -49,6 +51,9 @@ def train(model, train_loader, optimizer, epoch, device, loss_folder):
 	plt.savefig(f"{loss_folder}/{epoch}.png")
 	train_losses /= len(train_loader)
 	print(f"Train Epoch {epoch}th loss: {train_losses}")
+
+	end = time.time()
+	print(f"Epoch {epoch} trainng time : ", (end-start)/60 , "min")
 	return train_losses
 
 def train_better(model, train_loader, optimizer, epoch, device, loss_folder):
@@ -110,9 +115,9 @@ def train_better(model, train_loader, optimizer, epoch, device, loss_folder):
 	return train_losses
 
 
-def test(model, test_loader, epoch, trained_folder, scene):
+def test(model,path, test_loader, epoch, trained_folder, scene, device):
 	model.eval()
-	odom = pykitti.odometry(path, test_seq[0])
+	odom = pykitti.odometry(path, scene)
 	pose_estimates = [[0.0] * 6]  # Initial pose
 	current_rotation = np.eye(3)  # Initial rotation matrix
 	current_translation = np.zeros((3, 1))  # Initial translation vector
@@ -122,6 +127,8 @@ def test(model, test_loader, epoch, trained_folder, scene):
 		gt.append(se3_to_position(odom.poses[i]))
 
 	for i, batch in enumerate(test_loader):
+		if i%10==0:
+			print("Testing 03 batch : ", i)
 		seq, _, _ = batch # rgb, pos, ang
 		seq = seq.to(device)
 		predicted = model(seq)
@@ -150,7 +157,7 @@ def test(model, test_loader, epoch, trained_folder, scene):
 
 
 			for j in range(len(last_pose)):
-				last_pose[j] = last_pose[j] + answer[-1][j]
+				last_pose[j] = last_pose[j] + trajectory[-1][j]
 
 			current_translation = np.array(last_pose[3:]).reshape((3, 1))
 			last_pose[0] = (last_pose[0] + np.pi) % (2 * np.pi) - np.pi
@@ -159,7 +166,7 @@ def test(model, test_loader, epoch, trained_folder, scene):
 			final_pose = np.concatenate((current_rotation.copy(), current_translation.copy()), axis=1).flatten()
 			trajectory.append(final_pose)
 
-		np.savetxt(f"{trained_folder}/{scene}_{epoch}_pred.txt", traj, fmt="%1.8f")
+		np.savetxt(f"{trained_folder}/{scene}_{epoch}_pred.txt", trajectory, fmt="%1.8f")
 
         
 

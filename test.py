@@ -19,7 +19,7 @@ def se3_to_rot(mat):
 
 odom = pykitti.odometry(DATA_PATH, "00")
 
-train_dataset =  KittiOdomDataset("03")
+train_dataset =  KittiOdomDataset("03", DATA_PATH)
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS, drop_last=True)
 # optimizer = optim.Adagrad(model.parameters(), lr=0.001)
 
@@ -157,16 +157,5 @@ class CNN(nn.Module):
 
 model = DeepVOLite()
 model = model.to(DEVICE)
-print(sum(p.numel() for p in model.parameters()))
-
-for seq, pos, ang in train_loader:
-	print(seq.shape)
-	print(pos.shape)
-	print(ang.shape)
-
-	output = model.forward(seq)
-	print("Got an output")
-	print(output.shape)
-
-	# print(seq)
-	# break
+model.load_state_dict(torch.load("./trained_models/1.pth"))
+model.eval()
