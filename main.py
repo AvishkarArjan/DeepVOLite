@@ -74,7 +74,7 @@ if mode =="train":
 			plt.savefig(f"{loss_folder}/train_{epoch}.png")
 			print(f"{epoch}th epoch saved")
 			model.save_model(epoch, optimizer, trained_folder)
-			test(model, data_path, test_loader, epoch, trained_folder, "03")
+			test(model, data_path, test_loader, epoch, trained_folder, "04", device)
 
 		epoch_losses.append(epoch_loss)
 
@@ -83,7 +83,7 @@ if mode =="train":
 	print("Total training time : ", (end-start)/60, "min")
 
 if mode=="test":
-	model.load_state_dict(torch.load("./trained_models/1.pth")["model_state_dict"])
+	model.load_state_dict(torch.load("./trained_models/8.pth")["model_state_dict"])
 	test(model, data_path, test_loader, 1, trained_folder, "03", device)
 
 

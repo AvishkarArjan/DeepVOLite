@@ -155,7 +155,9 @@ class CNN(nn.Module):
 
 # print(train_loader)
 
-model = DeepVOLite()
-model = model.to(DEVICE)
-model.load_state_dict(torch.load("./trained_models/1.pth"))
-model.eval()
+# model = DeepVOLite()
+# model = model.to(DEVICE)
+# model.load_state_dict(torch.load("./trained_models/1.pth"))
+# model.eval()
+
+

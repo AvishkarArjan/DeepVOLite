@@ -3,6 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 import time
+from torch.utils.data import DataLoader
+from model import DeepVOLite
+
 
 
 def train(model, train_loader, optimizer, epoch, device, loss_folder):
@@ -123,12 +126,13 @@ def test(model,path, test_loader, epoch, trained_folder, scene, device):
 	current_translation = np.zeros((3, 1))  # Initial translation vector
 	gt=[]
 	trajectory = []
+
 	for i in range(len(odom)):
 		gt.append(se3_to_position(odom.poses[i]))
 
 	for i, batch in enumerate(test_loader):
 		if i%10==0:
-			print("Testing 03 batch : ", i)
+			print(f"Testing {scene} batch : ", i)
 		seq, _, _ = batch # rgb, pos, ang
 		seq = seq.to(device)
 		predicted = model(seq)
@@ -136,15 +140,14 @@ def test(model,path, test_loader, epoch, trained_folder, scene, device):
 
 		if i==0:
 			for pose in predicted[0]:
-				pose += pose_estimates[-1]
+				for i in range(len(pose)):
+					pose[i] = pose[i] + pose_estimates[-1][i]
 				pose_estimates.append(pose.tolist())
 
 			# Store the current trajectory
 			initial_pose = np.concatenate((current_rotation.copy(), current_translation.copy()), axis=1).flatten()
 			trajectory.append(initial_pose)
-            
 			predicted = predicted[1:]  # Skip the first prediction (already processed)
-
 
 		for poses in predicted:
 			rotation_angle = eulerAnglesToRotationMatrix([0, pose_estimates[-1][0], 0])
@@ -169,6 +172,22 @@ def test(model,path, test_loader, epoch, trained_folder, scene, device):
 		np.savetxt(f"{trained_folder}/{scene}_{epoch}_pred.txt", trajectory, fmt="%1.8f")
 
         
+def test_loss(model_path, test_loader):
+	model = DeepVOLite()
+	model.load_state_dict(torch.load(model_path)["model_state_dict"])
+	print("Num params DeepVOLite : ",sum(p.numel() for p in model.parameters()))
+
+	for i, batch in enumerate(test_loader):
+		seq, pos, ang = batch
+		loss = model.get_loss(seq, pos, ang)
+		print("Loss:",loss.item())
+
+
+if __name__ == "__main__":
+	test_dataset = KittiOdomDataset("03", DATA_PATH)
+	test_loader = DataLoader(test_dataset, batch_size=6, shuffle=True, num_workers=4, drop_last=False)
+
+	test_loss("./trained_models/8.pth", test_loader)
 
 
 

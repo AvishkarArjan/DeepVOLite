@@ -1,6 +1,7 @@
 # Lets not mess this up
 This project is my second try at replicating the results of the paper [DeepVO](https://arxiv.org/abs/1709.08429). The first attempt was so useless that I had to abandon weeks of coding and analysis altogether. 
 
+CURRENT UPDATE - So trying to reduce the number of parameters randomly within the model causes blunders. The least MSE loss i was able to get (training on my cpu) was around 0.10 - which is ridiculous in this case. I might have to try some more things to try to create a lighter version, maybe a different normalization . Idk. 
 
 ## Differences from Original paper
 The original model architecture mentioned in the paper 

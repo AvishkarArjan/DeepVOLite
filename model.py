@@ -31,7 +31,6 @@ def conv(in_channel, out_channel, kernel_size, stride, padding, dropout):
 
 		nn.BatchNorm2d(out_channel),
 		nn.ReLU(inplace=True),
-		nn.MaxPool2d(kernel_size= (2,2), stride = (2,2)),
 		nn.Dropout(dropout),
 
 		)
@@ -43,14 +42,15 @@ class DeepVOLite(nn.Module):
 	def __init__(self):
 		super(DeepVOLite, self).__init__()
 
-		self.conv1 = conv(6, 32, 7, 2, 3, 0.2)
-		self.conv2 = conv(32, 32, 5, 2, 2, 0.2)
-		self.conv3 = conv(32, 16, 5, 2, 2, 0.2)
+		self.conv1 = conv(6, 16, 7, 2, 3, 0.2)
+		self.conv2 = conv(16, 16, 7, 2, 2, 0.2)
+		self.conv3 = conv(16, 32, 5, 2, 2, 0.2)
+		self.conv4 = conv(32, 16, 5, 2, 2, 0.2)
+		self.conv5 = conv(16, 16, 5, 2, 2, 0.2)
 
-		#64, 94, 311
 
 		self.rnn = nn.LSTM(
-			input_size = 16*6*19, hidden_size=100, num_layers=2, batch_first=True
+			input_size = 16*12*39, hidden_size=100, num_layers=2, batch_first=True
 			)
 		self.lstm_dropout = nn.Dropout(0.5)
 		self.fc = nn.Linear(100, 6)
@@ -93,6 +93,8 @@ class DeepVOLite(nn.Module):
 		x = self.conv1(x)
 		x = self.conv2(x)
 		x = self.conv3(x)
+		x = self.conv4(x)
+		x = self.conv5(x)
 		
 		# print("before flat : ", x.shape)
 		x = x.view(batch_size, seq_len, -1) # Flattening
@@ -109,7 +111,10 @@ class DeepVOLite(nn.Module):
 		pos = pos[:, 1:, :]
 		ang = ang[:, 1:, :]
 		y_hat = self.forward(seq)
+		print("gt pos : ",pos[0])
+		print("pred pos : ", y_hat[:, :, 3:][0])
 		pos_loss = nn.functional.mse_loss(y_hat[:, :, 3:], pos)
+		print("pos Loss ",pos_loss)
 		ang_loss = nn.functional.mse_loss(y_hat[:, :, :3], ang)
 		return 100 * ang_loss + pos_loss
 
@@ -207,7 +212,10 @@ class DeepVO(nn.Module):
 		pos = pos[:, 1:, :]
 		ang = ang[:, 1:, :]
 		y_hat = self.forward(seq)
+		print("gt pos : ",pos)
+		print("pred pos : ", y_hat[:, :, 3:])
 		pos_loss = nn.functional.mse_loss(y_hat[:, :, 3:], pos)
+		print("pos Loss ",pos_loss)
 		ang_loss = nn.functional.mse_loss(y_hat[:, :, :3], ang)
 		return 100 * ang_loss + pos_loss
 
@@ -222,10 +230,12 @@ class DeepVO(nn.Module):
 		)
 
 
-
 if __name__ == "__main__":
 	model = DeepVOLite()
 	# model=DeepVO()
 	print("Num params DeepVOLite : ",sum(p.numel() for p in model.parameters()))
 
+	inp = torch.randn(6,6,6,375,1242)
+
+	output = model(inp)
 

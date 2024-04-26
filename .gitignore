@@ -7,6 +7,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 argparse_test.py
+trained_models
+loss_trained
 
 # C extensions
 *.so
